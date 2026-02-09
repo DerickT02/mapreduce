@@ -1,1 +1,5 @@
+com/derick/mapreduce/partition/Partition.class
+com/derick/mapreduce/worker/Worker.class
+com/derick/mapreduce/map/Map.class
 com/derick/mapreduce/App.class
+com/derick/mapreduce/reduce/Reduce.class
