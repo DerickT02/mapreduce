@@ -8,18 +8,23 @@ import java.io.OutputStream;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.net.Socket;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import com.derick.mapreduce.trip.*;
 import com.esotericsoftware.kryo.Kryo;
 
+
 public class Map {
+    
+    private static BlockingQueue<String> messageQueue;
 
     public static void main(String[] args) throws InterruptedException, FileNotFoundException, IOException{
         System.out.println("Map class in MapReduce package");
         try{
-            Socket socket = new Socket("localhost", 8080);
             
-
-            ArrayList<AbstractMap.SimpleEntry<String, String>> entries = readDataSet("/Users/derickpaulalavazotolentino/Downloads/test.csv");
-            sendToReduce(entries, socket);
+            messageQueue = new LinkedBlockingQueue<String>();
+            readDataSet("/Users/derickpaulalavazotolentino/Downloads/trip_data/trip_data_1.csv");
             
         }
         catch(Exception e){
@@ -33,31 +38,28 @@ public class Map {
         return new AbstractMap.SimpleEntry<>(key, value);
     }
 
-    private static ArrayList<AbstractMap.SimpleEntry<String, String>> readDataSet(String csvPath){
+    private static void readDataSet(String csvPath) throws FileNotFoundException, IOException, InterruptedException{
         String line;
         String splitBy = ",";
         ArrayList<AbstractMap.SimpleEntry<String, String>> entries = new ArrayList<>();
         try(BufferedReader br = new BufferedReader(new FileReader(csvPath))){
             while((line = br.readLine()) != null){
-                String[] columns = line.split(splitBy);
-                System.out.printf("%s %s\n",columns[0], columns[1]);
-                AbstractMap.SimpleEntry<String, String> entry = Mapper(columns[0], columns[1]);  
-                entries.add(entry);     
+                System.out.println(line);
+                messageQueue.put(line);
             }
             
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return entries;
     };
 
-    private static void sendToReduce(ArrayList<AbstractMap.SimpleEntry<String, String>> entries, Socket socket) throws IOException {
+    private static void sendToReduce(Socket socket) throws IOException {
         System.out.println("Sending entries to Reduce phase:");
         OutputStream outputStream = socket.getOutputStream();
         Kryo kryo = new Kryo();
-        for(AbstractMap.SimpleEntry<String, String> entry : entries){
-            System.out.printf("Key: %s, Value: %s\n", entry.getKey(), entry.getValue());
-            
+        kryo.register(Trip.class);
+        for(String line: messageQueue){
+            //kryo.writeObject(outputStream, kryo);
         }
         outputStream.flush();
         socket.close();

@@ -12,9 +12,10 @@ public class Reduce {
       try{
           ServerSocket serverSocket = new ServerSocket(port);
           System.out.println("Reduce class in MapReduce package");  
-          serverSocket.accept();
+          Socket socket = serverSocket.accept();
+          handleClient(socket);
 
-
+         
           serverSocket.close();
       }
       catch(IOException e){
@@ -24,6 +25,8 @@ public class Reduce {
 
    private static void handleClient(Socket socket) throws IOException{
       Input input = new Input(socket.getInputStream());
+      
+      
       Output output = new Output(socket.getOutputStream());
    }
 }
