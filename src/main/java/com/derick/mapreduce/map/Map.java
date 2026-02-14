@@ -11,8 +11,9 @@ import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import com.derick.mapreduce.trip.*;
+import com.derick.mapreduce.driver.Driver;
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Output;
 
 
 public class Map {
@@ -22,9 +23,11 @@ public class Map {
     public static void main(String[] args) throws InterruptedException, FileNotFoundException, IOException{
         System.out.println("Map class in MapReduce package");
         try{
+            Socket socket = new Socket("localhost", 8000);
             
             messageQueue = new LinkedBlockingQueue<String>();
             readDataSet("/Users/derickpaulalavazotolentino/Downloads/trip_data/trip_data_1.csv");
+            sendToReduce(socket);
             
         }
         catch(Exception e){
@@ -34,17 +37,12 @@ public class Map {
 
     }
 
-    private static AbstractMap.SimpleEntry<String, String> Mapper(String key, String value) {
-        return new AbstractMap.SimpleEntry<>(key, value);
-    }
 
     private static void readDataSet(String csvPath) throws FileNotFoundException, IOException, InterruptedException{
         String line;
-        String splitBy = ",";
-        ArrayList<AbstractMap.SimpleEntry<String, String>> entries = new ArrayList<>();
         try(BufferedReader br = new BufferedReader(new FileReader(csvPath))){
+            br.readLine();
             while((line = br.readLine()) != null){
-                System.out.println(line);
                 messageQueue.put(line);
             }
             
@@ -55,11 +53,15 @@ public class Map {
 
     private static void sendToReduce(Socket socket) throws IOException {
         System.out.println("Sending entries to Reduce phase:");
-        OutputStream outputStream = socket.getOutputStream();
+
+        Output outputStream =new Output(socket.getOutputStream());
         Kryo kryo = new Kryo();
-        kryo.register(Trip.class);
+        kryo.register(Driver.class);
         for(String line: messageQueue){
             //kryo.writeObject(outputStream, kryo);
+            String[] tripRow = line.split(",");
+            Driver driver = new Driver(tripRow[1], Integer.parseInt(tripRow[7]));
+            kryo.writeObject(outputStream, driver);
         }
         outputStream.flush();
         socket.close();
