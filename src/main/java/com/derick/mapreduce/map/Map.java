@@ -9,6 +9,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.derick.mapreduce.driver.Driver;
@@ -19,6 +20,8 @@ import com.esotericsoftware.kryo.io.Output;
 public class Map {
     
     private static BlockingQueue<String> messageQueue;
+    private static ConcurrentHashMap<String, Driver> driverMappings;
+    private static ArrayList<Driver> drivers;
 
     public static void main(String[] args) throws InterruptedException, FileNotFoundException, IOException{
         System.out.println("Map class in MapReduce package");
@@ -26,7 +29,10 @@ public class Map {
             Socket socket = new Socket("localhost", 8000);
             
             messageQueue = new LinkedBlockingQueue<String>();
+            driverMappings = new ConcurrentHashMap<String, Driver>();
             readDataSet("/Users/derickpaulalavazotolentino/Downloads/trip_data/trip_data_1.csv");
+            updateDriverMappings();
+            drivers = new ArrayList<>(driverMappings.values());
             sendToReduce(socket);
             
         }
@@ -43,24 +49,51 @@ public class Map {
         try(BufferedReader br = new BufferedReader(new FileReader(csvPath))){
             br.readLine();
             while((line = br.readLine()) != null){
-                messageQueue.put(line);
+                messageQueue.add(line);
+                
             }
+            messageQueue.put("EOF");
             
         } catch (IOException e) {
             e.printStackTrace();
         }
     };
 
+    private static void updateDriverMappings() throws InterruptedException{
+        while(true){
+            String line = messageQueue.take();
+            if("EOF".equals(line)) break;
+            try{
+                String[] tripRow = line.split(",");
+                String driverId = tripRow[1];
+                int tripTimeInSeconds = Integer.parseInt(tripRow[8]);
+                double tripDistance = Double.parseDouble(tripRow[9]);
+                driverMappings.compute(driverId, (id, driver) -> {
+                    if(driver == null){
+                        driver = new Driver(id);
+                    }
+                    driver.reportTrip(tripTimeInSeconds, tripDistance);
+                    return driver;
+                });
+            }
+            catch(IllegalArgumentException e){}
+            
+            
+        }
+        return;
+
+    }
+
+
+
     private static void sendToReduce(Socket socket) throws IOException {
         System.out.println("Sending entries to Reduce phase:");
 
         Output outputStream =new Output(socket.getOutputStream());
+        outputStream.writeInt(drivers.size());
         Kryo kryo = new Kryo();
         kryo.register(Driver.class);
-        for(String line: messageQueue){
-            //kryo.writeObject(outputStream, kryo);
-            String[] tripRow = line.split(",");
-            Driver driver = new Driver(tripRow[1], Integer.parseInt(tripRow[7]));
+        for(Driver driver: drivers){
             kryo.writeObject(outputStream, driver);
         }
         outputStream.flush();

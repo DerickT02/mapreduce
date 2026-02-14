@@ -1,17 +1,45 @@
 package com.derick.mapreduce.driver;
 
 public class Driver {
-    public String hack_license;
-    public int passenger_count;
+    private String hack_license;
+    private int trip_time_in_secs;
+    private double trip_distance;
     public Driver(){};
 
-    public Driver(String hack_license, int passenger_count){
+    public Driver(String hack_license){
         this.hack_license = hack_license;
-        this.passenger_count = passenger_count;
+    }
+
+    public Driver(String hack_license, int trip_time_in_secs, double trip_distance) {
+        this.hack_license = hack_license;
+        this.trip_time_in_secs = trip_time_in_secs;
+        this.trip_distance = trip_distance;
     }
 
     public synchronized void getDriverInfo(){
-        System.out.println("Hack License: " + hack_license + ", Passenger Count: " + passenger_count);
+        System.out.println("Hack License: " + hack_license + ". Trip time in seconds: " + this.trip_time_in_secs + ". Distance: " + this.trip_distance);
+    }
+
+    public void setId(String id){
+        this.hack_license = id;
+    }
+
+    public String getId(){
+        return this.hack_license;
+    }
+
+    public int getTripTime(){
+        return this.trip_time_in_secs;
+    }
+
+    public double getTripDistance(){
+        return this.trip_distance;
+    }
+
+    public synchronized void reportTrip(int tts, double td){
+        this.trip_time_in_secs += tts;
+        this.trip_distance += td;
+
     }
 
 
