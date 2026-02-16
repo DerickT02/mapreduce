@@ -36,17 +36,15 @@ public class Reduce {
       Kryo kryo = new Kryo();
       kryo.register(Driver.class);
       Input input = new Input(socket.getInputStream());
-      int count = input.readInt();  // 👈 read count
 
-      for (int i = 0; i < count; i++) {
+      while (input.readBoolean()) {                // true -> read next object
          Driver driver = kryo.readObject(input, Driver.class);
          driver.getDriverInfo();
       }
-         
-      
-       
+
+      input.close();
       socket.close();
-   }
+      }
 
 }
 
