@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 import com.derick.mapreduce.driver.Driver;
 
 
@@ -15,16 +14,17 @@ public class Reduce {
    static public int port = 8000;
    static public ConcurrentHashMap<String, Integer> driverTripMap;
    static public ConcurrentHashMap<String, Double> driverDistanceMap;
-   public static void main(String[] args){
+   public static void main(String[] args) throws IOException, InterruptedException{
       try{
           driverTripMap = new ConcurrentHashMap<String, Integer>();
           driverDistanceMap = new ConcurrentHashMap<String, Double>();
           ServerSocket serverSocket = new ServerSocket(port);
           System.out.println("Reduce class in MapReduce package");  
           Socket socket = serverSocket.accept();
-          handleClient(socket);
+          Thread clientThread = allocateThreadForSocket(socket); 
+          clientThread.start();
+          clientThread.join();
 
-         
           serverSocket.close();
       }
       catch(IOException e){
@@ -46,5 +46,16 @@ public class Reduce {
       socket.close();
       }
 
+   private static Thread allocateThreadForSocket(Socket socket){
+   
+         return new Thread(() -> {
+            try{
+               handleClient(socket);
+            }
+
+            catch(IOException e){
+               System.out.println(e);
+            }});
+   }
 }
 
