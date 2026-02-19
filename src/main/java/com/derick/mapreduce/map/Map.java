@@ -16,7 +16,8 @@ import com.esotericsoftware.kryo.io.Output;
 
 
 public class Map {
-    
+    private static int serverPort1 = 8000;
+    private static int serverPort2 = 8080;
     private static BlockingQueue<String> messageQueue;
     private static ConcurrentHashMap<String, Driver> driverMappings;
     private static ArrayList<Driver> drivers;
@@ -26,6 +27,10 @@ public class Map {
     public static void main(String[] args) throws InterruptedException, FileNotFoundException, IOException{
         System.out.println("Map class in MapReduce package");
         try{
+            if(args.length > 1){
+            serverPort1 = Integer.parseInt(args[0]);
+            serverPort2 = Integer.parseInt(args[1]);
+         }
             
             messageQueue = new LinkedBlockingQueue<String>();
             driverMappings = new ConcurrentHashMap<String, Driver>();
@@ -36,10 +41,14 @@ public class Map {
 
             drivers = new ArrayList<>(driverMappings.values());
 
-            Socket socket = new Socket("localhost", 8000);
-            Thread sendThread = allocateThreadForSocket(socket);
-            sendThread.start(); 
-            sendThread.join();  
+            Socket socket1 = new Socket("localhost", serverPort1);
+            Socket socket2 = new Socket("localhost", serverPort2);
+            Thread thread1 = allocateThreadForSocket(socket1);
+            Thread thread2 = allocateThreadForSocket(socket2);
+            thread1.start();
+            thread1.join();     
+            thread2.start();
+            thread2.join();
             System.out.println("Map phase completed. Data sent to Reduce phase.");
         }
         catch(Exception e){

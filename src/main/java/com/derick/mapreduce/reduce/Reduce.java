@@ -16,6 +16,9 @@ public class Reduce {
    static public ConcurrentHashMap<String, Double> driverDistanceMap;
    public static void main(String[] args) throws IOException, InterruptedException{
       try{
+         if(args.length > 0){
+            port = Integer.parseInt(args[0]);
+         }
           driverTripMap = new ConcurrentHashMap<String, Integer>();
           driverDistanceMap = new ConcurrentHashMap<String, Double>();
           ServerSocket serverSocket = new ServerSocket(port);
