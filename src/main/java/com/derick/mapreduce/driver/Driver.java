@@ -1,6 +1,6 @@
 package com.derick.mapreduce.driver;
 
-public class Driver {
+public class Driver implements Comparable<Driver> {
     private String hack_license;
     private int trip_time_in_secs;
     private double trip_distance;
@@ -40,6 +40,12 @@ public class Driver {
         this.trip_time_in_secs += tts;
         this.trip_distance += td;
 
+    }
+
+    @Override
+    public int compareTo(Driver other) {
+        if (other == null) return 1;
+        return Double.compare(other.trip_distance, this.trip_distance);
     }
 
 
