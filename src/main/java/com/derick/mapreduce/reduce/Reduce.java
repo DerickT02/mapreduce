@@ -6,6 +6,7 @@ import java.net.Socket;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.derick.mapreduce.driver.Driver;
 import java.util.PriorityQueue;
 
@@ -32,6 +33,10 @@ public class Reduce {
           clientThread1.join();
           clientThread2.join();
 
+          Socket mergerSocket = new Socket("localhost", 9000);
+          
+          sendToMerger(mergerSocket);
+
           serverSocket.close();
       }
       catch(IOException e){
@@ -56,7 +61,17 @@ public class Reduce {
 
       input.close();
       socket.close();
+   }
+
+   private static void sendToMerger(Socket socket) throws IOException{
+      Kryo kryo = new Kryo();
+      kryo.register(Driver.class);
+      Output output = new Output(socket.getOutputStream());
+      for(Driver driver : topDriversByTrips){
+         kryo.writeObject(output, driver);
       }
+      output.close();
+   }
 
       
 
