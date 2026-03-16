@@ -64,13 +64,32 @@ public class Reduce {
    }
 
    private static void sendToMerger(Socket socket) throws IOException{
+      // #region agent log
+      try (java.io.FileWriter fw = new java.io.FileWriter("/Users/derickpaulalavazotolentino/Desktop/mapreduce/.cursor/debug-e7cb34.log", true)) {
+         fw.write("{\"sessionId\":\"e7cb34\",\"location\":\"Reduce.java:sendToMerger\",\"message\":\"sendToMerger started\",\"data\":{\"queueSize\":\"" + topDriversByTrips.size() + "\"},\"timestamp\":" + System.currentTimeMillis() + "}\n");
+      } catch (Exception ignored) {}
+      // #endregion
       Kryo kryo = new Kryo();
       kryo.register(Driver.class);
       Output output = new Output(socket.getOutputStream());
-      for(Driver driver : topDriversByTrips){
-         kryo.writeObject(output, driver);
+      try {
+         for (Driver driver : topDriversByTrips) {
+            output.writeBoolean(true);   // sentinel = more objects (same protocol as Map -> Reduce)
+            kryo.writeObject(output, driver);
+            output.flush();              // flush after each object so data is pushed reliably
+         }
+         output.writeBoolean(false);     // sentinel = end
+         output.flush();
+      } finally {
+         output.flush();                 // ensure flush even on exception before close
+         output.close();
+         socket.close();
       }
-      output.close();
+      // #region agent log
+      try (java.io.FileWriter fw = new java.io.FileWriter("/Users/derickpaulalavazotolentino/Desktop/mapreduce/.cursor/debug-e7cb34.log", true)) {
+         fw.write("{\"sessionId\":\"e7cb34\",\"location\":\"Reduce.java:sendToMerger\",\"message\":\"sendToMerger completed\",\"timestamp\":" + System.currentTimeMillis() + "}\n");
+      } catch (Exception ignored) {}
+      // #endregion
    }
 
       
