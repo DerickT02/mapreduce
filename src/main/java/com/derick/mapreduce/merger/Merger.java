@@ -50,16 +50,9 @@ public class Merger {
         while (true) {
 
             try {
-
                 Driver driver = kryo.readObject(input, Driver.class);
-
-                // safely update the topKDrivers heap.
                 synchronized (topDriversByTrips) {
-
-                    topDriversByTrips.add(driver);
-
-                    // if we hvae more than k drivers, pop the one with the least $/min.
-                 
+                    topDriversByTrips.add(driver);                 
                 }
             }
 
