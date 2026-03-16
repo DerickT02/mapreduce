@@ -137,15 +137,19 @@ public class Map {
         Output outputStream = new Output(socket.getOutputStream());
         Kryo kryo = new Kryo();
         kryo.register(Driver.class);
-
-        for (Driver driver : drivers) {
-            outputStream.writeBoolean(true);      // sentinel = more objects
-            kryo.writeObject(outputStream, driver);
+        try {
+            for (Driver driver : drivers) {
+                outputStream.writeBoolean(true);  // sentinel = more objects
+                kryo.writeObject(outputStream, driver);
+                outputStream.flush();             // flush after each object so data is pushed reliably
+            }
+            outputStream.writeBoolean(false);     // sentinel = end
+            outputStream.flush();
+        } finally {
+            outputStream.flush();
+            outputStream.close();
+            socket.close();
         }
-        outputStream.writeBoolean(false);         // sentinel = end
-        outputStream.flush();
-        outputStream.close();
-        socket.close();
     };
 
     
